@@ -1,6 +1,7 @@
 local api = vim.api
 
 local function get_window_pos()
+  local floating_window_border = vim.g.lazygit_floating_window_border_chars
   local floating_window_scaling_factor = vim.g.lazygit_floating_window_scaling_factor
 
   -- Why is this required?
@@ -19,10 +20,24 @@ local function get_window_pos()
     return nil, nil, nil, nil, ret.win_id, ret.bufnr
   end
 
-  local height = math.ceil(vim.o.lines * floating_window_scaling_factor) - 1
-  local width = math.ceil(vim.o.columns * floating_window_scaling_factor)
-  local row = math.ceil(vim.o.lines - height) / 2
-  local col = math.ceil(vim.o.columns - width) / 2
+  local linecut = vim.o.cmdheight + 1 -- Count unavailable lines. Extra 1 is for statusline.
+  local colcut = 0 -- count unavailable columns
+
+  if floating_window_border ~= 'none' and floating_window_border ~= '' then
+    linecut = linecut + 2 -- One for each side.
+    colcut = colcut + 2 -- One for each side.
+  end
+
+  -- Maximum possible window size. Less than 1 makes no sense.
+  local lines = math.max(vim.o.lines - linecut, 1)
+  local columns = math.max(vim.o.columns - colcut, 1)
+
+  local height = math.floor(lines * floating_window_scaling_factor)
+  local width = math.floor(columns * floating_window_scaling_factor)
+
+  local row = math.floor(lines - height) / 2
+  local col = math.floor(columns - width) / 2
+
   return width, height, row, col
 end
 
@@ -34,8 +49,8 @@ local function open_floating_window()
   end
 
   local opts = {
-    style = "minimal",
-    relative = "editor",
+    style = 'minimal',
+    relative = 'editor',
     row = row,
     col = col,
     width = width,
@@ -58,8 +73,8 @@ local function open_floating_window()
   vim.bo.bufhidden = 'hide'
   vim.wo.cursorcolumn = false
   vim.wo.signcolumn = 'no'
-  vim.api.nvim_set_hl(0, "LazyGitBorder", { link = "Normal", default = true })
-  vim.api.nvim_set_hl(0, "LazyGitFloat", { link = "Normal", default = true })
+  vim.api.nvim_set_hl(0, 'LazyGitBorder', { link = 'Normal', default = true })
+  vim.api.nvim_set_hl(0, 'LazyGitFloat', { link = 'Normal', default = true })
   vim.wo.winhl = 'FloatBorder:LazyGitBorder,NormalFloat:LazyGitFloat'
   vim.wo.winblend = vim.g.lazygit_floating_window_winblend
 
@@ -70,16 +85,13 @@ local function open_floating_window()
           return
         end
         local new_width, new_height, new_row, new_col = get_window_pos()
-        api.nvim_win_set_config(
-          win,
-          {
-            width = new_width,
-            height = new_height,
-            relative = "editor",
-            row = new_row,
-            col = new_col,
-          }
-        )
+        api.nvim_win_set_config(win, {
+          width = new_width,
+          height = new_height,
+          relative = 'editor',
+          row = new_row,
+          col = new_col,
+        })
       end, 20)
     end,
   })
