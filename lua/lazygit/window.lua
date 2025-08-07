@@ -2,6 +2,9 @@ local api = vim.api
 
 local function get_window_pos()
   local floating_window_border = vim.g.lazygit_floating_window_border_chars
+  if floating_window_border == nil then
+      floating_window_border = vim.o.winborder
+  end
   local floating_window_scaling_factor = vim.g.lazygit_floating_window_scaling_factor
 
   -- Why is this required?
